@@ -61,6 +61,55 @@ const rooms = new Map();        // roomId -> room
 const messages = [];            // سجل الرسائل الصوتية (الأحدث آخراً)
 
 const now = () => Date.now();
+
+/* ── حماية رمز العائلة من التخمين ──────────────────────────────────────
+   المستودع عام وخطوات الاتصال موثّقة، والرمز هو حدّ الحماية الوحيد. لذا:
+   تأخير قصير على كل محاولة فاشلة + قيد لكل عنوان شبكة + تسجيل في السجل. */
+const AUTH_FAILS_PER_IP = 10;        // محاولات فاشلة مسموحة لكل عنوان…
+const AUTH_WINDOW_MS = 10 * 60_000;  // …خلال هذه النافذة
+const AUTH_LOCK_MS = 15 * 60_000;    // ومدة الحجب عند تجاوزها
+const AUTH_FAIL_DELAY_MS = 500;      // تأخير الردّ على المحاولة الفاشلة
+const authFails = new Map();         // ip -> { n, first, until }
+
+/** الثواني المتبقية من حجب هذا العنوان (0 = غير محجوب) */
+function authLockLeft(ip) {
+  const until = authFails.get(ip)?.until || 0;
+  return Math.max(0, Math.ceil((until - now()) / 1000));
+}
+
+/** يسجّل محاولة فاشلة، ويُرجع عددها وهل استدعت حجب العنوان */
+function noteAuthFail(ip) {
+  const st = authFails.get(ip) || { n: 0, first: now(), until: 0 };
+  if (now() - st.first > AUTH_WINDOW_MS) { st.n = 0; st.first = now(); }
+  st.n += 1;
+  const tried = st.n;
+  let locked = false;
+  if (st.n >= AUTH_FAILS_PER_IP) {
+    st.until = now() + AUTH_LOCK_MS;
+    st.n = 0; st.first = now();
+    locked = true;
+  }
+  authFails.set(ip, st);
+  if (authFails.size > 200) {  // تنظيف السجل حتى لا ينمو بلا حدّ
+    for (const [k, v] of authFails) {
+      if ((!v.until || v.until < now()) && now() - v.first > AUTH_WINDOW_MS) authFails.delete(k);
+    }
+  }
+  return { tried, locked };
+}
+
+/** مقارنة بزمن ثابت (حتى لا يُستنتج الرمز من فرق زمن الردّ) */
+function codeMatches(supplied) {
+  const a = Buffer.from(String(supplied), 'utf8');
+  const b = Buffer.from(FAMILY_CODE, 'utf8');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+/** سطر سجل موحّد لمحاولات الدخول (يظهر في journalctl و service.log) */
+function logAuth(text) {
+  console.log(`🔐 [${new Date().toISOString()}] ${text}`);
+}
+
 const send = (c, obj) => {
   if (c?.ws?.readyState === 1) c.ws.send(JSON.stringify(obj));
 };
@@ -185,11 +234,12 @@ function releaseTalker(room, why = 'timeout') {
 /* ========================== WebSocket ========================== */
 const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_VOICE_BYTES + 4096 });
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
   ws.isAlive = true;
   ws.on('pong', () => { ws.isAlive = true; });
 
-  const client = { id: nextId++, name: null, ws, ch: null, authed: false, upload: null, joinedAt: now() };
+  const client = { id: nextId++, name: null, ws, ch: null, authed: false, upload: null, joinedAt: now(),
+                   ip: req?.socket?.remoteAddress || 'unknown' };
   clients.set(client.id, client);
 
   ws.on('message', (raw, isBinary) => {
@@ -214,9 +264,24 @@ function handle(client, msg) {
 
   switch (msg.t) {
     case 'hello': {
+      // عنوان محجوب؟ لا نُكمل ولا نأخذ تأخيراً — نرفض فوراً حتى نهاية الحجب
+      const left = client.authed ? 0 : authLockLeft(client.ip);
+      if (left > 0) {
+        logAuth(`محاولة من عنوان محجوب ${client.ip} — يتبقى ${left} ثانية`);
+        send(client, { t: 'err', reason: 'locked' });
+        return;
+      }
       const code = String(msg.code || '').trim().toUpperCase();
-      if (code !== FAMILY_CODE) { send(client, { t: 'err', reason: 'badcode' }); return; }
+      if (!codeMatches(code)) {
+        const { tried, locked } = noteAuthFail(client.ip);
+        logAuth(`رمز خاطئ من ${client.ip} — المحاولة ${tried}/${AUTH_FAILS_PER_IP}`
+          + (locked ? ` ← حُجب ${AUTH_LOCK_MS / 60_000} دقيقة` : ''));
+        setTimeout(() => send(client, { t: 'err', reason: locked ? 'locked' : 'badcode' }), AUTH_FAIL_DELAY_MS);
+        return;
+      }
+      authFails.delete(client.ip);   // رمز صحيح → يُصفَّر العدّ لهذا العنوان
       const name = String(msg.name || '').trim().slice(0, 24) || `مستخدم${client.id}`;
+      logAuth(`دخول ناجح — ${name} من ${client.ip}`);
       client.authed = true;
       client.name = name;
       send(client, {
@@ -462,7 +527,7 @@ function handler(req, res) {
       if (fs.existsSync(qr)) return serveFile(res, qr);
       res.writeHead(404); res.end(''); return;
     }
-    if (pathname === '/code') return sendCodePage(res);
+    if (pathname === '/code') { res.writeHead(404, { 'Cache-Control': 'no-store' }); res.end(''); return; }
     if (allowed.includes(pathname) || isIcon) {
       if (pathname === '/' ) pathname = '/setup.html';
       const p = path.join(PUBLIC_DIR, path.normalize(pathname));
@@ -503,7 +568,11 @@ function handler(req, res) {
     res.writeHead(404); res.end(''); return;
   }
 
-  if (pathname === '/code') return sendCodePage(res);
+  // رمز العائلة يُعرض على جهاز الخدمة نفسه فقط — أي جهاز آخر على الشبكة كان يقرأه صريحاً
+  if (pathname === '/code') {
+    if (!isLoopback) { res.writeHead(404, { 'Cache-Control': 'no-store' }); res.end(''); return; }
+    return sendCodePage(res);
+  }
 
   if (pathname.startsWith('/media/')) {
     const base = path.basename(pathname);
@@ -574,7 +643,7 @@ console.log(`  رمز العائلة:      ${FAMILY_CODE}`);
 PUBLIC_URL = makeQr();
 console.log(`  رابط التطبيق:     ${PUBLIC_URL}`);
 console.log(`  صفحة تعريف الجوال: http://${new URL(PUBLIC_URL).hostname}:${DEV_HTTP_PORT}/`);
-console.log(`  رمز العائلة للمراجعة: ${PUBLIC_URL}code`);
+console.log(`  رمز العائلة للمراجعة (على هذا الجهاز فقط): http://127.0.0.1:${DEV_HTTP_PORT}/code`);
 console.log('──────────────────────────────────────────────');
 console.log('');
 

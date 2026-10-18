@@ -177,10 +177,12 @@ function onServer(m) {
       break;
 
     case 'err':
-      if (m.reason === 'badcode') {
+      if (m.reason === 'badcode' || m.reason === 'locked') {
         S.byUser = true;
         try { S.ws.close(); } catch { /* تجاهل */ }
-        goLogin('رمز العائلة غير صحيح. تأكد منه مع أبو فيصل.');
+        goLogin(m.reason === 'locked'
+          ? 'محاولات خاطئة كثيرة. انتظر ربع ساعة ثم أعد المحاولة.'
+          : 'رمز العائلة غير صحيح. تأكد منه مع أبو فيصل.');
       } else {
         toast(m.reason === 'toolarge' ? 'المقطع طويل جداً' : 'خطأ في الخادم');
       }
