@@ -491,7 +491,11 @@ function sendHtml(res, filePath) {
   let html;
   try { html = fs.readFileSync(filePath, 'utf8'); }
   catch { res.writeHead(404); res.end(''); return; }
-  const buf = Buffer.from(html.replaceAll('__APP_VERSION__', APP_VERSION), 'utf8');
+  const buf = Buffer.from(
+    html.replaceAll('__APP_VERSION__', APP_VERSION)
+      .replaceAll('__APP_URL__', appUrl())
+      .replaceAll('__APP_URL_IP__', appUrlIp()),
+    'utf8');
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=utf-8',
     'Content-Length': buf.length,
@@ -613,10 +617,14 @@ devServer.listen(DEV_HTTP_PORT, '0.0.0.0', () => {
 });
 devServer.on('error', (e) => console.error('خطأ HTTP:', e.message));
 
-/* --------- رمز QR (يُولَّد محلياً بـ qrencode إن توفّر) --------- */
+/* --------- رابط التطبيق الذي نعلّمه للعائلة ---------
+   الأساس: اسم الجهاز على الشبكة (mDNS) مثل pop-os.local — لأن شهادة الثقة تحمله
+   ولا يتبدّل بتبدّل عنوان الشبكة. والبديل: عنوان الشبكة، لجوال لا يدعم mDNS. */
+const MDNS_HOST = os.hostname().endsWith('.local') ? os.hostname() : `${os.hostname()}.local`;
+const APP_HOST = process.env.PUBLIC_HOST || MDNS_HOST;
 let PUBLIC_URL = '';
 
-/** عنوان جهازنا على الشبكة المحلية — يكون null لو أقلعنا قبل جهوز الواي فاي */
+/** عنوان جهازنا على الشبكة المحلية — null لو أقلعنا قبل جهوز الواي فاي */
 function lanIp() {
   return process.env.LAN_IP
     || Object.values(os.networkInterfaces()).flat()
@@ -624,24 +632,21 @@ function lanIp() {
     || null;
 }
 
-/** يولّد qr.png لرابط التطبيق، ويُرجع الرابط (أو null لو لا عنوان شبكة بعد) */
-function makeQr(ip = lanIp()) {
-  if (!ip) return null;
-  const target = `https://${ip}:${HTTPS_PORT}/`;
+const appUrl = () => `https://${APP_HOST}:${HTTPS_PORT}/`;
+const appUrlIp = () => { const ip = lanIp(); return ip ? `https://${ip}:${HTTPS_PORT}/` : ''; };
+
+/** يولّد qr.png لرابط التطبيق (يُولَّد محلياً بـ qrencode) */
+function makeQr(url = appUrl()) {
   try {
-    execFileSync('qrencode', ['-o', path.join(DATA_DIR, 'qr.png'), '-s', '8', '-m', '2', target]);
+    execFileSync('qrencode', ['-o', path.join(DATA_DIR, 'qr.png'), '-s', '8', '-m', '2', url]);
   } catch { /* qrencode غير متوفّر */ }
-  return target;
+  return url;
 }
 
-/* رمز QR يُولَّد مرة عند الإقلاع — نُعيد توليده لو حُذف أو تغيّر عنوان الجهاز
-   (الخدمة تُقلع تلقائياً قبل الدخول، فقد تُقلع قبل جهوز الواي فاي) */
+/* يُقدَّم رمز QR من الملف، ويُعاد توليده لو حُذف أو تغيّر الرابط */
 function sendQr(res) {
   const qr = path.join(DATA_DIR, 'qr.png');
-  const ip = lanIp();
-  if (!fs.existsSync(qr) || !PUBLIC_URL || (ip && !PUBLIC_URL.includes(`//${ip}:`))) {
-    PUBLIC_URL = makeQr(ip) || PUBLIC_URL;
-  }
+  if (!fs.existsSync(qr) || PUBLIC_URL !== appUrl()) PUBLIC_URL = makeQr();
   if (fs.existsSync(qr)) return serveFile(res, qr);
   res.writeHead(404); res.end(''); return;
 }
@@ -652,9 +657,9 @@ console.log('  جهاز اللاسلكي العائلي — يعمل الآن');
 console.log('──────────────────────────────────────────────');
 console.log(`  رمز العائلة:      ${FAMILY_CODE}`);
 PUBLIC_URL = makeQr();
-console.log(`  رابط التطبيق:     ${PUBLIC_URL
-  || '⚠️ لم يجهز عنوان الشبكة بعد — سيُولَّد رمز QR عند أول فتح لصفحة التعريف'}`);
-console.log(`  صفحة تعريف الجوال: http://${PUBLIC_URL ? new URL(PUBLIC_URL).hostname : '<عنوان-الجهاز>'}:${DEV_HTTP_PORT}/`);
+console.log(`  رابط التطبيق:     ${PUBLIC_URL}`);
+console.log(`  رابط بديل بعنوان الشبكة: ${appUrlIp() || '⚠️ لم يجهز عنوان الشبكة بعد'}`);
+console.log(`  صفحة تعريف الجوال: http://${APP_HOST}:${DEV_HTTP_PORT}/`);
 console.log(`  رمز العائلة للمراجعة (على هذا الجهاز فقط): http://127.0.0.1:${DEV_HTTP_PORT}/code`);
 console.log('──────────────────────────────────────────────');
 console.log('');

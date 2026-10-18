@@ -42,6 +42,7 @@
     <p class="muted small">امسح الرمز للدخول من هذا الجوال مباشرة:</p>
     <p><a id="appLink" class="btn primary" href="#">افتح التطبيق</a></p>
     <p class="muted small" id="appUrl"></p>
+    <p class="muted small" id="appUrlIp"></p>
     <p class="muted small">رمز العائلة تطلبه من مسؤول العائلة — لا يُعرض على أجهزة الشبكة حمايةً له.</p>
   </div>
 </div>
@@ -125,9 +126,15 @@
 </p>
 
 <script>
-  const appUrl = `${location.protocol === 'https:' ? 'https:' : 'https:'}//${location.hostname}:8443/`;
-  document.querySelector('#appLink').href = appUrl;
-  document.querySelector('#appUrl').textContent = appUrl;
+  /* الرابط يأتي محقوناً من السيرفر (اسم الجهاز على الشبكة) — لا من عنوان الصفحة،
+     حتى لا يتعلّق تعليم العائلة بعنوان قد يتبدّل */
+  const APP_URL = '__APP_URL__';
+  const APP_URL_IP = '__APP_URL_IP__';
+  document.querySelector('#appLink').href = APP_URL;
+  document.querySelector('#appUrl').textContent = APP_URL;
+  if (APP_URL_IP && APP_URL_IP !== APP_URL) {
+    document.querySelector('#appUrlIp').textContent = `لو لم يفتح الاسم على جوالك، استعمل: ${APP_URL_IP}`;
+  }
   document.querySelector('#tabA').onclick = () => {
     document.querySelector('#tabA').classList.add('on');
     document.querySelector('#tabI').classList.remove('on');
