@@ -522,11 +522,7 @@ function handler(req, res) {
       fs.createReadStream(path.join(CERT_DIR, 'ca.crt')).pipe(res);
       return;
     }
-    if (pathname === '/qr.png') {
-      const qr = path.join(DATA_DIR, 'qr.png');
-      if (fs.existsSync(qr)) return serveFile(res, qr);
-      res.writeHead(404); res.end(''); return;
-    }
+    if (pathname === '/qr.png') return sendQr(res);
     if (pathname === '/code') { res.writeHead(404, { 'Cache-Control': 'no-store' }); res.end(''); return; }
     if (allowed.includes(pathname) || isIcon) {
       if (pathname === '/' ) pathname = '/setup.html';
@@ -562,11 +558,7 @@ function handler(req, res) {
     return;
   }
 
-  if (pathname === '/qr.png') {
-    const qr = path.join(DATA_DIR, 'qr.png');
-    if (fs.existsSync(qr)) return serveFile(res, qr);
-    res.writeHead(404); res.end(''); return;
-  }
+  if (pathname === '/qr.png') return sendQr(res);
 
   // رمز العائلة يُعرض على جهاز الخدمة نفسه فقط — أي جهاز آخر على الشبكة كان يقرأه صريحاً
   if (pathname === '/code') {
@@ -623,16 +615,35 @@ devServer.on('error', (e) => console.error('خطأ HTTP:', e.message));
 
 /* --------- رمز QR (يُولَّد محلياً بـ qrencode إن توفّر) --------- */
 let PUBLIC_URL = '';
-function makeQr() {
-  const ip = process.env.LAN_IP
+
+/** عنوان جهازنا على الشبكة المحلية — يكون null لو أقلعنا قبل جهوز الواي فاي */
+function lanIp() {
+  return process.env.LAN_IP
     || Object.values(os.networkInterfaces()).flat()
       .find((i) => i && i.family === 'IPv4' && !i.internal)?.address
-    || '127.0.0.1';
+    || null;
+}
+
+/** يولّد qr.png لرابط التطبيق، ويُرجع الرابط (أو null لو لا عنوان شبكة بعد) */
+function makeQr(ip = lanIp()) {
+  if (!ip) return null;
   const target = `https://${ip}:${HTTPS_PORT}/`;
   try {
     execFileSync('qrencode', ['-o', path.join(DATA_DIR, 'qr.png'), '-s', '8', '-m', '2', target]);
   } catch { /* qrencode غير متوفّر */ }
   return target;
+}
+
+/* رمز QR يُولَّد مرة عند الإقلاع — نُعيد توليده لو حُذف أو تغيّر عنوان الجهاز
+   (الخدمة تُقلع تلقائياً قبل الدخول، فقد تُقلع قبل جهوز الواي فاي) */
+function sendQr(res) {
+  const qr = path.join(DATA_DIR, 'qr.png');
+  const ip = lanIp();
+  if (!fs.existsSync(qr) || !PUBLIC_URL || (ip && !PUBLIC_URL.includes(`//${ip}:`))) {
+    PUBLIC_URL = makeQr(ip) || PUBLIC_URL;
+  }
+  if (fs.existsSync(qr)) return serveFile(res, qr);
+  res.writeHead(404); res.end(''); return;
 }
 
 console.log('');
@@ -641,8 +652,9 @@ console.log('  جهاز اللاسلكي العائلي — يعمل الآن');
 console.log('──────────────────────────────────────────────');
 console.log(`  رمز العائلة:      ${FAMILY_CODE}`);
 PUBLIC_URL = makeQr();
-console.log(`  رابط التطبيق:     ${PUBLIC_URL}`);
-console.log(`  صفحة تعريف الجوال: http://${new URL(PUBLIC_URL).hostname}:${DEV_HTTP_PORT}/`);
+console.log(`  رابط التطبيق:     ${PUBLIC_URL
+  || '⚠️ لم يجهز عنوان الشبكة بعد — سيُولَّد رمز QR عند أول فتح لصفحة التعريف'}`);
+console.log(`  صفحة تعريف الجوال: http://${PUBLIC_URL ? new URL(PUBLIC_URL).hostname : '<عنوان-الجهاز>'}:${DEV_HTTP_PORT}/`);
 console.log(`  رمز العائلة للمراجعة (على هذا الجهاز فقط): http://127.0.0.1:${DEV_HTTP_PORT}/code`);
 console.log('──────────────────────────────────────────────');
 console.log('');
