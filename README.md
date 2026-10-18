@@ -123,7 +123,7 @@ family-talk/
 │   ├── styles.css            التنسيق
 │   ├── setup.html            صفحة تهيئة الجوالات
 │   ├── manifest.webmanifest  ليُثبَّت كتطبيق
-│   └── icons/                أيقونات (تُولَّد بـ ffmpeg)
+│   └── icons/                أيقونات التطبيق (من طقم logo/ عبر make-icons.sh)
 ├── certs/
 │   └── generate.sh           توليد شهادة محلية جديدة (المفاتيح والملفات المولَّدة غير مرفوعة)
 ├── test/e2e.mjs              اختبار شامل من طرفين (19 فحصاً)
