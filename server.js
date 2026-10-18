@@ -25,6 +25,10 @@ const DATA_DIR = path.join(__dirname, 'data');
 const MEDIA_DIR = path.join(DATA_DIR, 'media');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 
+/* رقم الإصدار: مصدر واحد فقط هو package.json — يُحقن في الصفحات ويُعلَن في /api/health */
+const PKG = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json'), 'utf8'));
+const APP_VERSION = PKG.version;
+
 const HTTPS_PORT = Number(process.env.PORT || 8443);
 const DEV_HTTP_PORT = Number(process.env.DEV_PORT || 8080);
 
@@ -417,6 +421,21 @@ function serveFile(res, filePath, { noStore = false } = {}) {
   });
 }
 
+/* صفحات HTML: نحقن رقم الإصدار الحالي قبل الإرسال (لا صياغة قوالب، فقط __APP_VERSION__) */
+function sendHtml(res, filePath) {
+  let html;
+  try { html = fs.readFileSync(filePath, 'utf8'); }
+  catch { res.writeHead(404); res.end(''); return; }
+  const buf = Buffer.from(html.replaceAll('__APP_VERSION__', APP_VERSION), 'utf8');
+  res.writeHead(200, {
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Length': buf.length,
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+  });
+  res.end(buf);
+}
+
 function handler(req, res) {
   const url = new URL(req.url, 'https://local');
   let pathname = decodeURIComponent(url.pathname);
@@ -446,7 +465,8 @@ function handler(req, res) {
     if (pathname === '/code') return sendCodePage(res);
     if (allowed.includes(pathname) || isIcon) {
       if (pathname === '/' ) pathname = '/setup.html';
-      return serveFile(res, path.join(PUBLIC_DIR, path.normalize(pathname)), { noStore: true });
+      const p = path.join(PUBLIC_DIR, path.normalize(pathname));
+      return p.endsWith('.html') ? sendHtml(res, p) : serveFile(res, p, { noStore: true });
     }
     // بقية المسارات → إلى النسخة المشفّرة
     const host = String(req.headers.host || '').split(':')[0];
@@ -457,7 +477,13 @@ function handler(req, res) {
 
   if (pathname === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-    res.end(JSON.stringify({ ok: true, clients: clients.size, rooms: rooms.size, messages: messages.length }));
+    res.end(JSON.stringify({
+      ok: true,
+      version: APP_VERSION,
+      clients: clients.size,
+      rooms: rooms.size,
+      messages: messages.length,
+    }));
     return;
   }
 
@@ -487,7 +513,8 @@ function handler(req, res) {
   if (pathname === '/' || pathname === '') pathname = '/index.html';
   const filePath = path.join(PUBLIC_DIR, path.normalize(pathname).replace(/^(\.\.[/\\])+/, ''));
   if (!filePath.startsWith(PUBLIC_DIR)) { res.writeHead(403); res.end('ممنوع'); return; }
-  // ملفات التطبيق دائماً طازجة (تطبيق محلي — لا معنى للتخزين المؤقت)
+  // صفحات HTML تُحقن برقم الإصدار، وبقية الملفات دائماً طازجة (تطبيق محلي)
+  if (filePath.endsWith('.html')) return sendHtml(res, filePath);
   serveFile(res, filePath, { noStore: true });
 }
 

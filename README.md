@@ -4,6 +4,7 @@
 
 > بث مباشر بالضغط للتحدث (WebRTC ندّاً لندّ — الصوت لا يمر بالسيرفر) · رسائل صوتية تُشغَّل تلقائياً بصوت عالٍ مثل الإنتركم · قنوات خاصة بين اثنين · يُثبَّت على الشاشة الرئيسية كأنه تطبيق حقيقي.
 
+[![Version](https://img.shields.io/github/v/tag/afkw2aziz-cmyk/lan-walkie-talkie?label=version&color=27d17c)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
 
@@ -41,6 +42,7 @@ node server.js               # أو: npm start
 
 | العنصر | القيمة |
 |---|---|
+| **الإصدار** | يُعرَض في شاشة الدخول وفي لوحة الإعدادات ⚙ وفي صفحة التهيئة · ويُعلَن في `/api/health` |
 | عنوان التطبيق | `https://<LAN_IP>:8443` (أو `https://<hostname>.local:8443` إن كان mDNS يعمل) |
 | صفحة تعريف الجوالات | `http://<LAN_IP>:8080` |
 | رمز العائلة | في `data/config.json` — أو صفحة `/code` |
@@ -128,6 +130,8 @@ family-talk/
 │   └── generate.sh           توليد شهادة محلية جديدة (المفاتيح والملفات المولَّدة غير مرفوعة)
 ├── test/e2e.mjs              اختبار شامل من طرفين (19 فحصاً)
 ├── tools/family-talk.sh      تشغيل/إيقاف/سجلات
+├── logo/                     الهوية البصرية: شعار وأيقونات وأدوات بنائها (+ دليلها)
+├── CHANGELOG.md              سجل الإصدارات (مصدر رقم الإصدار: package.json)
 └── data/
     ├── config.example.json   نموذج رمز العائلة (انسخه إلى config.json)
     └── media/                الرسائل الصوتية (تُحذف تلقائياً بعد 7 أيام)
@@ -180,6 +184,29 @@ node test/e2e.mjs
 
 يفحص: رفض الرمز الخطأ، الدخول، قائمة المتصلين، منع تكلّم اثنين معاً، وسيط SDP و ICE،
 رفع رسالة صوتية واسترجاعها، المحادثة الخاصة، والمغادرة.
+
+---
+
+## 9) الإصدارات
+
+رقم الإصدار له **مصدر واحد فقط**: حقل `version` في `package.json`.
+
+| أين يظهر | كيف |
+|---|---|
+| شاشة الدخول · لوحة الإعدادات ⚙ · صفحة التهيئة | يحقنه السيرفر في HTML عبر `<meta name="app-version">` |
+| `/api/health` | `{"ok":true,"version":"...",...}` |
+| شارة أعلى هذه الصفحة | تقرأها shields.io من آخر `git tag` |
+| كسر تخزين الواجهة | `styles.css?v=` و`app.js?v=` مربوطان بالرقم تلقائياً |
+
+سجل التغييرات الكامل وقواعد الترقية في [CHANGELOG.md](CHANGELOG.md).
+لفحص نسخة الخدمة العاملة من أي جهاز:
+
+```bash
+curl -sk https://127.0.0.1:8443/api/health | python3 -m json.tool
+```
+
+> لا تكتب رقم الإصدار يدوياً في أي ملف آخر — ارفعه في `package.json` فقط،
+> والباقي يتبعه.
 
 ---
 

@@ -22,6 +22,12 @@ const el = {
   settingsBtn: $('#settingsBtn'), addToHome: $('#addToHome'),
 };
 
+/* ============================ الإصدار ============================
+   الرقم يأتي من package.json عبر السيرفر (وسم <meta name="app-version">)،
+   فلا يوجد رقم إصدار مكتوب يدوياً في الواجهة يتعارض معه. */
+const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content || '—';
+for (const node of document.querySelectorAll('[data-app-version]')) node.textContent = APP_VERSION;
+
 /* ============================== الحالة ============================== */
 const S = {
   ws: null, me: null, name: '', code: '',

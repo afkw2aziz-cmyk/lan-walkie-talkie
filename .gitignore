@@ -5,9 +5,9 @@ certs/*.srl
 data/config.json
 
 # ===== بيانات تشغيل محلية =====
-data/media/
-data/*.log
-data/qr.png
+# كل ما يُنشأ وقت التشغيل في data/ لا يُرفع — إلا النموذج
+data/*
+!data/config.example.json
 
 # ===== اعتمادات =====
 node_modules/

@@ -12,7 +12,8 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icons/icon-180.png">
 <link rel="icon" href="/icons/icon-192.png">
-<link rel="stylesheet" href="/styles.css?v=3">
+<meta name="app-version" content="__APP_VERSION__">
+<link rel="stylesheet" href="/styles.css?v=__APP_VERSION__">
 </head>
 <body>
 
@@ -23,6 +24,7 @@
       <img src="/icons/icon-192.png" alt="" class="brand-icon">
       <h1>اللاسلكي العائلي</h1>
       <p class="muted">اتصال مباشر داخل شبكة المنزل</p>
+      <p class="muted small">الإصدار <span data-app-version>—</span></p>
     </div>
 
     <label class="field">
@@ -124,6 +126,7 @@
     <div class="sheet-info">
       <div><b>الغرفة:</b> <span id="infoRoom">—</span></div>
       <div><b>المتصلون:</b> <span id="infoCount">0</span></div>
+      <div><b>الإصدار:</b> <span data-app-version>—</span></div>
     </div>
 
     <button id="saveBtn" class="btn primary">حفظ</button>
@@ -141,6 +144,6 @@
   <audio class="live" playsinline preload="auto" data-pooled="1"></audio>
 </div>
 
-<script src="/app.js?v=3"></script>
+<script src="/app.js?v=__APP_VERSION__"></script>
 </body>
 </html>

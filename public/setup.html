@@ -6,6 +6,7 @@
 <title>تهيئة اللاسلكي العائلي</title>
 <link rel="stylesheet" href="/styles.css">
 <link rel="icon" href="/icons/icon-192.png">
+<meta name="app-version" content="__APP_VERSION__">
 <style>
   body{display:block;padding:20px 16px 60px;max-width:720px;margin:0 auto}
   h1{font-size:24px;margin:14px 0 6px}
@@ -30,7 +31,8 @@
 <body>
 
 <h1>📻 تهيئة اللاسلكي العائلي</h1>
-<p class="muted">اتبع الخطوات مرة واحدة على كل جوال — بعدها يعمل التطبيق بلمسة.</p>
+<p class="muted">اتبع الخطوات مرة واحدة على كل جوال — بعدها يعمل التطبيق بلمسة.<br>
+<span class="small">إصدار الخدمة: <span data-app-version>—</span></span></p>
 
 <div class="card qr">
   <div>
@@ -138,6 +140,11 @@
     document.querySelector('#ios').hidden = false;
     document.querySelector('#android').hidden = true;
   };
+</script>
+<script>
+  /* رقم الإصدار يأتي محقوناً من السيرفر (package.json) */
+  const APP_VERSION = document.querySelector('meta[name="app-version"]')?.content || '—';
+  for (const n of document.querySelectorAll('[data-app-version]')) n.textContent = APP_VERSION;
 </script>
 </body>
 </html>
