@@ -1,0 +1,18 @@
+{
+  "name": "family-talk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "جهاز لاسلكي صوتي عائلي يعمل داخل الشبكة المحلية (PWA + WebRTC)",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "certs": "bash certs/generate.sh"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.22.0"
+  }
+}

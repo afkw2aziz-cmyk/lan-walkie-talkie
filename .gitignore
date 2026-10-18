@@ -1,0 +1,19 @@
+# ===== أسرار ومفاتيح (لا تُرفع أبداً) =====
+certs/*.key
+certs/*.crt
+certs/*.srl
+data/config.json
+
+# ===== بيانات تشغيل محلية =====
+data/media/
+data/*.log
+data/qr.png
+
+# ===== اعتمادات =====
+node_modules/
+
+# ===== عام =====
+*.log
+.env
+.env.*
+.DS_Store

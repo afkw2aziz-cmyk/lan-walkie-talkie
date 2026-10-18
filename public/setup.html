@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>تهيئة اللاسلكي العائلي</title>
+<link rel="stylesheet" href="/styles.css">
+<link rel="icon" href="/icons/icon-192.png">
+<style>
+  body{display:block;padding:20px 16px 60px;max-width:720px;margin:0 auto}
+  h1{font-size:24px;margin:14px 0 6px}
+  h2{font-size:18px;margin:26px 0 10px;display:flex;align-items:center;gap:8px}
+  .num{background:var(--accent);color:#04150c;width:26px;height:26px;border-radius:50%;
+       display:inline-grid;place-items:center;font-weight:800;font-size:14px;flex:0 0 auto}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin:12px 0}
+  a.btn{display:block;text-align:center;text-decoration:none}
+  ol{padding-inline-start:20px;margin:8px 0}
+  li{margin:7px 0;font-size:15px}
+  .qr{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:center;text-align:center}
+  .qr img{width:190px;height:190px;background:#fff;border-radius:14px;padding:6px}
+  code{background:#0006;padding:2px 7px;border-radius:7px;font-size:14px;direction:ltr;display:inline-block}
+  .tabs{display:flex;gap:8px;margin:14px 0}
+  .tabs button{flex:1;background:var(--card);border:1px solid var(--line);color:var(--muted);
+    border-radius:12px;padding:12px;font-size:15px;font-weight:700;cursor:pointer}
+  .tabs button.on{background:#1f6fff33;border-color:#3d7fff;color:var(--txt)}
+  .warnbox{background:#3a2a12;border:1px solid #7a5a1f;border-radius:14px;padding:12px;font-size:14px}
+  .err{background:#3a1220;border:1px solid #7d2440;border-radius:14px;padding:12px;font-size:14px}
+</style>
+</head>
+<body>
+
+<h1>📻 تهيئة اللاسلكي العائلي</h1>
+<p class="muted">اتبع الخطوات مرة واحدة على كل جوال — بعدها يعمل التطبيق بلمسة.</p>
+
+<div class="card qr">
+  <div>
+    <img src="/qr.png" alt="رمز QR لفتح التطبيق" onerror="this.style.display='none'">
+  </div>
+  <div style="flex:1;min-width:220px">
+    <p class="muted small">امسح الرمز للدخول من هذا الجوال مباشرة:</p>
+    <p><a id="appLink" class="btn primary" href="#">افتح التطبيق</a></p>
+    <p class="muted small" id="appUrl"></p>
+    <p class="muted small">رمز العائلة ستجده في <a href="/code">هذه الصفحة</a>.</p>
+  </div>
+</div>
+
+<div class="card">
+  <a class="btn accent" href="/ca.crt">⬇︎ ١) حمّل شهادة الثقة (family-talk-ca.crt)</a>
+  <p class="muted small" style="margin:12px 0 0">
+    هذه الشهادة مصنوعة على جهازك وهي ما يجعل الميكروفون يعمل داخل الشبكة المحلية.
+    لا تُثبّتها إلا على أجهزة العائلة.
+  </p>
+</div>
+
+<div class="tabs">
+  <button id="tabA" class="on" type="button">أندرويد</button>
+  <button id="tabI" type="button">آيفون / آيباد</button>
+</div>
+
+<div id="android">
+  <div class="card">
+    <h2><span class="num">٢</span> ثبّت الشهادة</h2>
+    <ol>
+      <li>افتح <b>الإعدادات</b> ← <b>الأمان والخصوصية</b> ← <b>التشفير وبيانات الاعتماد</b>.</li>
+      <li>اختر <b>تثبيت شهادة</b> ← <b>شهادة CA</b>.</li>
+      <li>اختر ملف <code>family-talk-ca.crt</code> من مجلد التنزيلات.</li>
+      <li>سيظهر تحذير أمني — اضغط <b>تثبيت على أي حال</b>.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2><span class="num">٣</span> افتح التطبيق وثبّته</h2>
+    <ol>
+      <li>افتح رابط التطبيق في <b>كروم</b> (سيظهر قفل آمن).</li>
+      <li>اضغط قائمة ⋮ ← <b>تثبيت التطبيق</b> / <b>إضافة إلى الشاشة الرئيسية</b>.</li>
+      <li>افتحه من الشاشة الرئيسية، اكتب اسمك ورمز العائلة، واضغط <b>دخول</b>.</li>
+      <li>اسمح بالميكروفون عند الطلب.</li>
+    </ol>
+  </div>
+</div>
+
+<div id="ios" hidden>
+  <div class="card">
+    <h2><span class="num">٢</span> ثبّت الشهادة</h2>
+    <ol>
+      <li>بعد التنزيل سيظهر <b>«تم تنزيل ملف التعريف»</b>.</li>
+      <li><b>الإعدادات</b> ← <b>عام</b> ← <b>VPN وإدارة الجهاز</b> ← اختر <b>Family Talk Local CA</b> ← <b>تثبيت</b>.</li>
+      <li>ثم <b>الإعدادات</b> ← <b>عام</b> ← <b>حول</b> ← <b>إعدادات الثقة بالشهادة</b>.</li>
+      <li>فعّل المفتاح بجانب <b>Family Talk Local CA</b>.</li>
+    </ol>
+    <div class="warnbox">⚠️ بدون الخطوة ٣ (إعدادات الثقة) لن يعمل الميكروفون.</div>
+  </div>
+  <div class="card">
+    <h2><span class="num">٣</span> ثبّت التطبيق على الشاشة</h2>
+    <ol>
+      <li>افتح رابط التطبيق في <b>سفاري</b> (وليس كروم).</li>
+      <li>اضغط زر المشاركة <b>⤴︎</b> ← <b>إضافة إلى الشاشة الرئيسية</b>.</li>
+      <li>افتحه من الشاشة الرئيسية، اكتب اسمك ورمز العائلة، واضغط <b>دخول</b>.</li>
+      <li>اسمح بالميكروفون عند الطلب.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>ملاحظات خاصة بالآيفون</h2>
+    <ul style="padding-inline-start:20px;font-size:15px">
+      <li>يجب إبقاء التطبيق <b>مفتوحاً على الشاشة</b> — الآيفون يوقف الميكروفون في الخلفية.</li>
+      <li>الرسائل الصوتية تخرج من <b>السماعة الخارجية</b> بصوت عالٍ. أما البث المباشر فقد يخرج من سماعة الأذن.</li>
+      <li>لأفضل نتيجة: فعّل «إبقاء الشاشة مضاءة» في الإعدادات داخل التطبيق.</li>
+    </ul>
+  </div>
+</div>
+
+<div class="card">
+  <h2>لم يعمل شيء؟</h2>
+  <ul style="padding-inline-start:20px;font-size:15px">
+    <li><b>المتصفح يرفض الميكروفون:</b> الشهادة لم تُثبَّت أو لم تُفعَّل الثقة بها.</li>
+    <li><b>لا يتصل بالسيرفر:</b> تأكد أن اللابتوب يعمل وأن الجوال على نفس شبكة الواي فاي.</li>
+    <li><b>لا صوت في البث المباشر:</b> بعض الراوترات تعزل الأجهزة عن بعضها (AP Isolation) — أوقفها من إعدادات الراوتر.</li>
+    <li><b>تغيّر عنوان اللابتوب:</b> اطلب من الراوتر تثبيت العنوان (DHCP Reservation).</li>
+  </ul>
+</div>
+
+<p class="muted small" style="text-align:center;margin-top:24px">
+  اللاسلكي العائلي — يعمل داخل شبكتك فقط، بلا إنترنت وبلا سيرفرات خارجية.
+</p>
+
+<script>
+  const appUrl = `${location.protocol === 'https:' ? 'https:' : 'https:'}//${location.hostname}:8443/`;
+  document.querySelector('#appLink').href = appUrl;
+  document.querySelector('#appUrl').textContent = appUrl;
+  document.querySelector('#tabA').onclick = () => {
+    document.querySelector('#tabA').classList.add('on');
+    document.querySelector('#tabI').classList.remove('on');
+    document.querySelector('#android').hidden = false;
+    document.querySelector('#ios').hidden = true;
+  };
+  document.querySelector('#tabI').onclick = () => {
+    document.querySelector('#tabI').classList.add('on');
+    document.querySelector('#tabA').classList.remove('on');
+    document.querySelector('#ios').hidden = false;
+    document.querySelector('#android').hidden = true;
+  };
+</script>
+</body>
+</html>

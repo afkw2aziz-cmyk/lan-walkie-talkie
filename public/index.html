@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<title>اللاسلكي العائلي</title>
+<meta name="theme-color" content="#0b1220">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="اللاسلكي">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icons/icon-180.png">
+<link rel="icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/styles.css?v=3">
+</head>
+<body>
+
+<!-- ══════════════════ شاشة الدخول ══════════════════ -->
+<section id="login" class="screen show">
+  <div class="login-panel">
+    <div class="brand">
+      <img src="/icons/icon-192.png" alt="" class="brand-icon">
+      <h1>اللاسلكي العائلي</h1>
+      <p class="muted">اتصال مباشر داخل شبكة المنزل</p>
+    </div>
+
+    <label class="field">
+      <span>اسمك</span>
+      <input id="nameInput" type="text" inputmode="text" autocomplete="name"
+             placeholder="مثال: أبو فيصل" maxlength="24">
+    </label>
+
+    <div id="nameChips" class="chips"></div>
+
+    <label class="field">
+      <span>رمز العائلة</span>
+      <input id="codeInput" type="text" inputmode="text" autocomplete="off"
+             placeholder="مثال: 7KMPQ2" maxlength="12" dir="ltr" style="text-align:center;letter-spacing:.2em">
+    </label>
+
+    <p id="loginError" class="error" hidden></p>
+
+    <button id="joinBtn" class="btn primary big">دخول</button>
+    <p class="muted small">بتشغيل الميكروفون أنت توافق على استخدامه للتحدث فقط.</p>
+  </div>
+</section>
+
+<!-- ══════════════════ الشاشة الرئيسية ══════════════════ -->
+<section id="app" class="screen">
+  <header class="topbar">
+    <div class="who">
+      <span id="statusDot" class="dot off" title="حالة الاتصال"></span>
+      <span id="myName" class="me-name">—</span>
+    </div>
+    <div class="topbar-actions">
+      <button id="addToHome" class="icon-btn" title="أضف إلى الشاشة الرئيسية" hidden>⤓</button>
+      <button id="settingsBtn" class="icon-btn" title="الإعدادات">⚙</button>
+    </div>
+  </header>
+
+  <nav id="channels" class="channels" aria-label="القنوات"></nav>
+
+  <main class="stage">
+    <div id="talkerBanner" class="talker-banner" hidden>
+      <span class="eq"><i></i><i></i><i></i></span>
+      <span id="talkerName">—</span>
+      <span class="muted small">يتكلم الآن…</span>
+    </div>
+
+    <div id="log" class="log" aria-live="polite"></div>
+  </main>
+
+  <footer class="controls">
+    <div id="recBar" class="rec-bar" hidden>
+      <span class="rec-dot"></span>
+      <span id="recTimer">0:00</span>
+      <button id="recCancel" class="btn tiny ghost">إلغاء</button>
+      <button id="recSend" class="btn tiny accent">إرسال</button>
+    </div>
+
+    <div class="ptt-row">
+      <button id="recordBtn" class="round-btn rec" title="تسجيل رسالة صوتية">🎙</button>
+
+      <button id="pttBtn" class="ptt" aria-label="اضغط مع الاستمرار للتحدث">
+        <span class="ptt-inner">
+          <span id="pttIcon">🎤</span>
+          <span id="pttLabel">اضغط للتحدث</span>
+        </span>
+      </button>
+
+      <button id="muteBtn" class="round-btn mute" title="كتم السماعة">🔊</button>
+    </div>
+
+    <p id="hint" class="hint muted small">اضغط مع الاستمرار على الزر… ثم اتركه عند الانتهاء.</p>
+  </footer>
+</section>
+
+<!-- ══════════════════ لوحة الإعدادات ══════════════════ -->
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-card">
+    <h2>الإعدادات</h2>
+
+    <label class="switch">
+      <input id="autoplayToggle" type="checkbox" checked>
+      <span>تشغيل الرسائل الواردة تلقائياً</span>
+    </label>
+
+    <label class="switch">
+      <input id="vibrateToggle" type="checkbox" checked>
+      <span>اهتزاز عند وصول رسالة</span>
+    </label>
+
+    <label class="switch">
+      <input id="wakeToggle" type="checkbox" checked>
+      <span>إبقاء الشاشة مضاءة</span>
+    </label>
+
+    <label class="field">
+      <span>تغيير الاسم</span>
+      <input id="renameInput" type="text" maxlength="24">
+    </label>
+
+    <div class="sheet-info">
+      <div><b>الغرفة:</b> <span id="infoRoom">—</span></div>
+      <div><b>المتصلون:</b> <span id="infoCount">0</span></div>
+    </div>
+
+    <button id="saveBtn" class="btn primary">حفظ</button>
+    <button id="leaveBtn" class="btn ghost">خروج</button>
+    <button id="closeSheet" class="btn ghost small">إغلاق</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<audio id="announcer" playsinline preload="auto"></audio>
+<div id="liveAudio">
+  <audio class="live" playsinline preload="auto" data-pooled="1"></audio>
+  <audio class="live" playsinline preload="auto" data-pooled="1"></audio>
+  <audio class="live" playsinline preload="auto" data-pooled="1"></audio>
+  <audio class="live" playsinline preload="auto" data-pooled="1"></audio>
+</div>
+
+<script src="/app.js?v=3"></script>
+</body>
+</html>
